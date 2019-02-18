@@ -30,8 +30,10 @@ class Kernel():
             return prod_scal
         return f
     
-    def __init__(self, func):
+    def __init__(self, func, normalized = False):
         self.kernel = func
+        self.normalized = normalized
+        self.diag = np.array([])
         
     def gram(self, data):
         n = len(data)
@@ -42,7 +44,20 @@ class Kernel():
                 prod_scal = self.kernel(data[i], data[j])
                 K[i, j] = prod_scal
                 K[j, i] = prod_scal
+        
+        if self.normalized:
+            self.diag = np.sqrt(np.diag(K))
+            print(self.diag.shape)
+            for i in range(n):
+                K[i, :] = K[i,:]/self.diag[i]
+                K[:, i] = K[:, i]/self.diag[i]
+            
         return K
     
     def eval_f(self, x, alpha, data):
-        return np.sum([alpha[i]*self.kernel(x, xi) for i, xi in enumerate(data)])
+        if self.normalized:
+            square_norm_x = np.sqrt(self.kernel(x, x))
+            result = np.sum([(alpha[i]*self.kernel(x, xi))/(square_norm_x * self.diag[i]) for i, xi in enumerate(data)])
+        else:
+            result =  np.sum([alpha[i]*self.kernel(x, xi) for i, xi in enumerate(data)])
+        return result 

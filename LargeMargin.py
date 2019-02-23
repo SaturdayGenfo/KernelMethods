@@ -1,4 +1,5 @@
 from cvxopt import solvers, matrix, spmatrix, sparse
+import numpy as np
 
 class LargeMargin():
     

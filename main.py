@@ -21,9 +21,9 @@ def split_data(dataset, y, k, m):
     
     dataset.populate_kmer_set(k)
     dataset.mismatch_preprocess(k, m)
-    
+    idx = range(len(dataset.data))
     pairs = []
-    data_tranches = [dataset.data[500*i : 500*i+ 500] for i in range(4)]
+    data_tranches = [idx[500*i : 500*i+ 500] for i in range(4)]
     label_tranches = [y[500*i: 500*i + 500] for i in range(4)]
     for i in range(4):
         test, ytest = data_tranches[i], label_tranches[i]
@@ -33,17 +33,22 @@ def split_data(dataset, y, k, m):
         pairs.append((train, ytrain, test, ytest))
     return pairs
     
-kernel = Kernel(Kernel.mismatch())
+kernel = Kernel(Kernel.sparse_gaussian(1))
 
-pairs = split_data(dataset, y, 8, 0)
+pairs = split_data(dataset, y, 9, 0)
+bigK = kernel.gram(dataset.data)
 
 avg = 0
 lmda = 0.01
+
 for train, ytrain, test, ytest in pairs:
-    alpha = kernel_train(kernel, train, ytrain, lmda)
-    #print(alpha)
-    pred = kernel_predict(kernel, alpha, train, test)
-    s = score(pred, ytest)
+    K = np.array([[bigK[i,j] for j in train] for i in train])
+    alpha = LargeMargin.SVM(K, ytrain, lmda)
+    predict = []
+    for j in tqdm(test):
+        eval_f = np.sum([alpha[k]*bigK[j, i] for k,i in enumerate(train)])
+        predict.append(np.sign(eval_f))
+    s = score(predict, ytest)
     print("Score : ", s)
     avg += s
 

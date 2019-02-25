@@ -10,48 +10,101 @@ from Kernel import Kernel
 from LargeMargin import LargeMargin
 from utils import *
 
+
+'''
+------------------------------------------------------------
+        DATASET 0
+------------------------------------------------------------
+'''
+
 fname = '0'
 dataset = DataHandler('data/Xtr'+fname+'.csv')
-
 
 labels = pd.read_csv('data/Ytr'+fname+'.csv')
 y = 2.0*np.array(labels['Bound']) - 1
 
-def split_data(dataset, y, k, m):
+test = DataHandler('data/Xte'+fname+'.csv')
+
     
-    dataset.populate_kmer_set(k)
-    dataset.mismatch_preprocess(k, m)
-    idx = range(len(dataset.data))
-    pairs = []
-    data_tranches = [idx[500*i : 500*i+ 500] for i in range(4)]
-    label_tranches = [y[500*i: 500*i + 500] for i in range(4)]
-    for i in range(4):
-        test, ytest = data_tranches[i], label_tranches[i]
-        train = np.concatenate([data_tranches[j] for j in range(4) if j != i])
-        ytrain = np.concatenate([label_tranches[j] for j in range(4) if j != i])
-        
-        pairs.append((train, ytrain, test, ytest))
-    return pairs
+dataset.populate_kmer_set(11)
+test.kmer_set = dataset.kmer_set
+
+dataset.mismatch_preprocess(11 , 1)
+test.mismatch_preprocess(11, 1)
+
+kernel = Kernel(Kernel.mismatch())
+
+lmda = 0.1
+
+alpha = kernel_train(kernel, dataset.data, y, lmda)
+pred0 = kernel_predict(kernel, alpha, dataset.data, test.data)
+
+
+'''
+------------------------------------------------------------
+        DATASET 1
+------------------------------------------------------------
+'''
+
+fname = '1'
+dataset = DataHandler('data/Xtr'+fname+'.csv')
+
+labels = pd.read_csv('data/Ytr'+fname+'.csv')
+y = 2.0*np.array(labels['Bound']) - 1
+
+test = DataHandler('data/Xte'+fname+'.csv')
+
     
-kernel = Kernel(Kernel.sparse_gaussian(0.1))
+dataset.populate_kmer_set(9)
+test.kmer_set = dataset.kmer_set
 
-pairs = split_data(dataset, y, 8, 0)
-bigK = kernel.gram(dataset.data)
+dataset.mismatch_preprocess(9 , 1)
+test.mismatch_preprocess(9, 1)
 
-avg = 0
-lmda = 0.01
+kernel = Kernel(Kernel.mismatch())
 
-for train, ytrain, test, ytest in pairs:
-    K = np.array([[bigK[i,j] for j in train] for i in train])
-    alpha = LargeMargin.SVM(K, ytrain, lmda)
-    predict = []
-    for j in tqdm(test):
-        eval_f = np.sum([alpha[k]*bigK[j, i] for k,i in enumerate(train)])
-        predict.append(np.sign(eval_f))
-    s = score(predict, ytest)
-    print("Score : ", s)
-    avg += s
+lmda = 0.1
 
-print("Parameter Score : ", avg/4)
+alpha = kernel_train(kernel, dataset.data, y, lmda)
+pred1 = kernel_predict(kernel, alpha, dataset.data, test.data)
 
 
+'''
+------------------------------------------------------------
+        DATASET 2
+------------------------------------------------------------
+'''
+
+fname = '2'
+dataset = DataHandler('data/Xtr'+fname+'.csv')
+
+labels = pd.read_csv('data/Ytr'+fname+'.csv')
+y = 2.0*np.array(labels['Bound']) - 1
+
+test = DataHandler('data/Xte'+fname+'.csv')
+
+    
+dataset.populate_kmer_set(12)
+test.kmer_set = dataset.kmer_set
+
+dataset.mismatch_preprocess(12 , 0)
+test.mismatch_preprocess(12, 0)
+
+kernel = Kernel(Kernel.sparse_gaussian(10))
+
+
+lmda = 0.0000001
+
+alpha = kernel_train(kernel, dataset.data, y, lmda)
+pred2 = kernel_predict(kernel, alpha, dataset.data, test.data)
+
+
+'''
+------------------------------------------------------------
+        KAGGLEIZER
+------------------------------------------------------------
+'''
+
+out_fname = "kaggle.csv"
+predictions = pred0 + pred1 + pred2
+write_predictions(predictions, out_fname)

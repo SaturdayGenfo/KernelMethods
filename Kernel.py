@@ -37,6 +37,12 @@ class Kernel():
             return 1/(np.sqrt(2*np.pi)*sigma) * np.exp(-norm/(2*sigma**2))
         return f
     
+    def sparse_poly(c, n):
+        def f(x, y):
+            ps = Kernel.mismatch()
+            return (ps(x,y) + c)**n
+        return f
+    
     def __init__(self, func, normalized = False):
         self.kernel = func
         self.normalized = normalized

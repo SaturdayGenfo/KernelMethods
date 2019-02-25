@@ -32,15 +32,8 @@ class Kernel():
     
     def sparse_gaussian(sigma):
         def f(x, y):
-            norm = 0
-            for kmer in x:
-                if kmer in y:
-                    norm += (x[kmer] - y[kmer])**2
-                else:
-                    norm += x[kmer]**2
-            for kmer in y:
-                if kmer not in x:
-                    norm += y[kmer]**2
+            ps = Kernel.mismatch()
+            norm = ps(x, x) - 2*ps(x, y) + ps(y,y)
             return 1/(np.sqrt(2*np.pi)*sigma) * np.exp(-norm/(2*sigma**2))
         return f
     

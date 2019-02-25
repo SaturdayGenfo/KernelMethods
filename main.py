@@ -33,9 +33,9 @@ def split_data(dataset, y, k, m):
         pairs.append((train, ytrain, test, ytest))
     return pairs
     
-kernel = Kernel(Kernel.sparse_gaussian(1))
+kernel = Kernel(Kernel.sparse_gaussian(0.1))
 
-pairs = split_data(dataset, y, 9, 0)
+pairs = split_data(dataset, y, 8, 0)
 bigK = kernel.gram(dataset.data)
 
 avg = 0

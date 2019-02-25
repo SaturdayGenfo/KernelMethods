@@ -10,22 +10,43 @@ from Kernel import Kernel
 from LargeMargin import LargeMargin
 from utils import *
 
-fname = '1'
+fname = '0'
 dataset = DataHandler('data/Xtr'+fname+'.csv')
-dataset.spectrum_preprocess(k = 8)
+
 
 labels = pd.read_csv('data/Ytr'+fname+'.csv')
 y = 2.0*np.array(labels['Bound']) - 1
 
-ytrain, yval = y[:1500], y[1500:]
+def split_data(dataset, y, k, m):
+    
+    dataset.populate_kmer_set(k)
+    dataset.mismatch_preprocess(k, m)
+    
+    pairs = []
+    data_tranches = [dataset.data[500*i : 500*i+ 500] for i in range(4)]
+    label_tranches = [y[500*i: 500*i + 500] for i in range(4)]
+    for i in range(4):
+        test, ytest = data_tranches[i], label_tranches[i]
+        train = np.concatenate([data_tranches[j] for j in range(4) if j != i])
+        ytrain = np.concatenate([label_tranches[j] for j in range(4) if j != i])
+        
+        pairs.append((train, ytrain, test, ytest))
+    return pairs
+    
+kernel = Kernel(Kernel.mismatch())
 
-training, validation = dataset.data[:1500], dataset.data[1500:]
+pairs = split_data(dataset, y, 8, 0)
 
+avg = 0
+lmda = 0.01
+for train, ytrain, test, ytest in pairs:
+    alpha = kernel_train(kernel, train, ytrain, lmda)
+    #print(alpha)
+    pred = kernel_predict(kernel, alpha, train, test)
+    s = score(pred, ytest)
+    print("Score : ", s)
+    avg += s
 
-kernel = Kernel(Kernel.spectrum())
+print("Parameter Score : ", avg/4)
 
-alpha = kernel_train(kernel, training, ytrain, 0.01)
-pred = kernel_predict(kernel, alpha, training, validation)
-
-print(score(pred, yval))
 

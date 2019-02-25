@@ -28,7 +28,6 @@ def kernel_predict(kernel, alpha, training, test):
     predict = []
     for x in tqdm(test):
         predict.append(np.sign(kernel.eval_f(x, alpha, training)))
-    
     return predict
 
 def score(predict, yreal):

@@ -7,7 +7,7 @@ class LargeMargin():
     
         print("Optimizing")
     
-        solvers.options['show_progress'] = True
+        solvers.options['show_progress'] = False
     
         n = len(y)
         q = -matrix(y, (n, 1), tc='d')
